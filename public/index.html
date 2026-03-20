@@ -1,1 +1,1847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InsightFlow - Enterprise Data Intelligence Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #0a0e27;
+            --secondary: #1a1f3a;
+            --accent: #00d9ff;
+            --accent-hover: #00b8d4;
+            --success: #00ff88;
+            --warning: #ffaa00;
+            --danger: #ff4757;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --bg: #050814;
+            --card: #0f1629;
+            --border: #1e293b;
+            --shadow: rgba(0, 217, 255, 0.1);
+            --code-bg: #0a0e1a;
+        }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sora', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(0, 217, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 255, 136, 0.03) 0%, transparent 50%);
+        }
+
+        /* Header */
+        .header {
+            background: rgba(15, 22, 41, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), #00ff88);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .mode-toggle {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .mode-toggle:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .mode-toggle.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--primary);
+        }
+
+        .export-btn {
+            background: linear-gradient(135deg, var(--accent), #00b8d4);
+            color: var(--primary);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .export-btn.show {
+            display: block;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 217, 255, 0.4);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Input Section */
+        .input-section {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Advanced Options */
+        .advanced-toggle {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .advanced-toggle:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .advanced-options {
+            display: none;
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .advanced-options.show {
+            display: block;
+        }
+
+        .option-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .option-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .option-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        .checkbox-item label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        /* Input Methods */
+        .input-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-method {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg);
+        }
+
+        .input-method:hover {
+            border-color: var(--accent);
+            background: var(--card);
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px var(--shadow);
+        }
+
+        .input-method.active {
+            border-color: var(--accent);
+            border-style: solid;
+            background: rgba(0, 217, 255, 0.05);
+        }
+
+        .input-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .input-method h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-method p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Manual Input */
+        .manual-input-area {
+            display: none;
+            margin-top: 1.5rem;
+        }
+
+        .manual-input-area.active {
+            display: block;
+        }
+
+        .input-grid {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 80px;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .input-field {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background: var(--bg);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
+        }
+
+        .add-row-btn {
+            background: var(--accent);
+            color: var(--primary);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-row-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .remove-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .remove-btn:hover {
+            background: #dc2626;
+        }
+
+        /* File Upload */
+        .file-upload-area {
+            display: none;
+            margin-top: 1.5rem;
+        }
+
+        .file-upload-area.active {
+            display: block;
+        }
+
+        .file-drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: var(--bg);
+        }
+
+        .file-drop-zone:hover,
+        .file-drop-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(0, 217, 255, 0.05);
+        }
+
+        .file-info {
+            display: none;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--success);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            color: var(--success);
+        }
+
+        .file-info.show {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Data Preview */
+        .data-preview {
+            margin-top: 1.5rem;
+            display: none;
+        }
+
+        .data-preview.show {
+            display: block;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            background: var(--code-bg);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .preview-table th {
+            background: var(--border);
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .preview-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+        }
+
+        /* Generate Button */
+        .generate-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--accent), #00b8d4);
+            color: var(--primary);
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3);
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 217, 255, 0.4);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading State */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--success));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px var(--shadow);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-change {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .stat-change.positive {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--success);
+        }
+
+        .stat-change.negative {
+            background: rgba(255, 71, 87, 0.1);
+            color: var(--danger);
+        }
+
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .chart-header {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .chart-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .chart-download {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .chart-download:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Data Table */
+        .data-table-section {
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .table-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .search-input {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.875rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 600px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .data-table thead {
+            background: var(--bg);
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .data-table th:hover {
+            background: var(--border);
+        }
+
+        .data-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--bg);
+        }
+
+        .number-cell {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        .positive-value {
+            color: var(--success);
+        }
+
+        .negative-value {
+            color: var(--danger);
+        }
+
+        /* SQL Query Section */
+        .sql-section {
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .sql-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .sql-query {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--success);
+            overflow-x: auto;
+            line-height: 1.8;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Insights Panel */
+        .insights-panel {
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+        }
+
+        .insight-item {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--accent);
+            background: var(--bg);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .insight-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .insight-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .insight-text {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .insight-icon {
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        /* Mode Badges */
+        .mode-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .mode-badge.business {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--success);
+        }
+
+        .mode-badge.technical {
+            background: rgba(0, 217, 255, 0.1);
+            color: var(--accent);
+        }
+
+        /* Statistics Panel */
+        .stats-panel {
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--bg);
+            border-radius: 8px;
+        }
+
+        .stat-name {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <span>InsightFlow</span>
+            </div>
+            <div class="header-actions">
+                <button class="mode-toggle" id="businessMode">👥 Business</button>
+                <button class="mode-toggle active" id="technicalMode">💻 Technical</button>
+                <button class="export-btn" id="exportBtn">📥 Export Report</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Input Section -->
+        <div class="input-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>📊</span>
+                    Data Input
+                </h2>
+                <button class="advanced-toggle" id="advancedToggle">⚙️ Advanced Options</button>
+            </div>
+
+            <!-- Advanced Options -->
+            <div class="advanced-options" id="advancedOptions">
+                <div class="option-group">
+                    <label class="option-label">Analysis Type</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="optStatistical" checked>
+                            <label for="optStatistical">Statistical Analysis</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="optCorrelation" checked>
+                            <label for="optCorrelation">Correlation Analysis</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="optOutliers" checked>
+                            <label for="optOutliers">Outlier Detection</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="optTrends" checked>
+                            <label for="optTrends">Trend Analysis</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="option-group">
+                    <label class="option-label">Output Options</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="optSQL" checked>
+                            <label for="optSQL">Generate SQL Queries</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="optPython" checked>
+                            <label for="optPython">Generate Python Code</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="optAPI">
+                            <label for="optAPI">API Response Format</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="option-group">
+                    <label class="option-label">Visualization Preferences</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="optInteractive" checked>
+                            <label for="optInteractive">Interactive Charts</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="optHeatmap">
+                            <label for="optHeatmap">Correlation Heatmap</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="optTimeseries">
+                            <label for="optTimeseries">Time Series Analysis</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-methods">
+                <div class="input-method" id="manualInputBtn">
+                    <div class="input-icon">✍️</div>
+                    <h3>Manual Entry</h3>
+                    <p>Enter data directly</p>
+                </div>
+                <div class="input-method" id="fileUploadBtn">
+                    <div class="input-icon">📁</div>
+                    <h3>Upload File</h3>
+                    <p>CSV, Excel, JSON</p>
+                </div>
+                <div class="input-method" id="sampleDataBtn">
+                    <div class="input-icon">🎯</div>
+                    <h3>Sample Data</h3>
+                    <p>E-commerce dataset</p>
+                </div>
+            </div>
+
+            <!-- Manual Input Area -->
+            <div class="manual-input-area" id="manualInputArea">
+                <div class="input-grid" id="inputGrid">
+                    <div class="input-row">
+                        <input type="text" class="input-field" placeholder="Product Name" data-field="product">
+                        <input type="text" class="input-field" placeholder="Category" data-field="category">
+                        <input type="number" class="input-field" placeholder="Sales" data-field="sales">
+                        <input type="number" class="input-field" placeholder="Revenue" data-field="revenue">
+                        <button class="remove-btn" onclick="removeRow(this)">🗑️</button>
+                    </div>
+                </div>
+                <button class="add-row-btn" id="addRowBtn">+ Add Row</button>
+            </div>
+
+            <!-- File Upload Area -->
+            <div class="file-upload-area" id="fileUploadArea">
+                <div class="file-drop-zone" id="fileDropZone">
+                    <div class="input-icon">📤</div>
+                    <h3>Drop your file here</h3>
+                    <p>Supports CSV, Excel (.xlsx, .xls), JSON</p>
+                    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json" style="display: none;">
+                </div>
+                <div class="file-info" id="fileInfo">
+                    <span>✅ <strong id="fileName"></strong> (<span id="fileSize"></span>)</span>
+                    <button class="remove-btn" onclick="clearFile()">🗑️</button>
+                </div>
+                
+                <!-- Data Preview -->
+                <div class="data-preview" id="dataPreview">
+                    <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Data Preview</h3>
+                    <table class="preview-table" id="previewTable"></table>
+                    <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
+                        Showing first 5 rows of <span id="totalRows"></span> total rows
+                    </p>
+                </div>
+            </div>
+
+            <button class="generate-btn" id="generateBtn" disabled>
+                ⚡ Generate Insights
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <h3>Analyzing your data...</h3>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem;">Running statistical analysis and generating insights</p>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <!-- Key Metrics -->
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>📈</span>
+                    Key Metrics
+                </h2>
+                <span class="mode-badge technical" id="currentModeBadge">Technical View</span>
+            </div>
+            <div class="insights-grid" id="metricsGrid"></div>
+
+            <!-- Statistical Summary (Technical Only) -->
+            <div class="stats-panel" id="statsPanel" style="display: none;">
+                <h3 class="section-title" style="margin-bottom: 1.5rem;">
+                    <span>📊</span>
+                    Statistical Summary
+                </h3>
+                <div class="stats-grid" id="statsGrid"></div>
+            </div>
+
+            <!-- SQL Query (Technical Only) -->
+            <div class="sql-section" id="sqlSection" style="display: none;">
+                <div class="sql-header">
+                    <h3 class="section-title">
+                        <span>💾</span>
+                        Generated SQL Query
+                    </h3>
+                    <button class="copy-btn" onclick="copySQL()">📋 Copy</button>
+                </div>
+                <pre class="sql-query" id="sqlQuery"></pre>
+            </div>
+
+            <!-- Charts -->
+            <div class="section-header" style="margin-top: 2rem;">
+                <h2 class="section-title">
+                    <span>📊</span>
+                    Visual Analytics
+                </h2>
+            </div>
+            <div class="charts-section">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div>
+                            <div class="chart-title">Revenue Distribution</div>
+                            <div class="chart-subtitle">By category</div>
+                        </div>
+                        <button class="chart-download" onclick="downloadChart('categoryChart')">💾 Save</button>
+                    </div>
+                    <canvas id="categoryChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div>
+                            <div class="chart-title">Performance Trends</div>
+                            <div class="chart-subtitle">Growth analysis</div>
+                        </div>
+                        <button class="chart-download" onclick="downloadChart('trendChart')">💾 Save</button>
+                    </div>
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="data-table-section">
+                <div class="table-header">
+                    <h2 class="section-title">
+                        <span>📋</span>
+                        Data Overview
+                    </h2>
+                    <div class="table-controls">
+                        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Search...">
+                        <button class="copy-btn" onclick="exportToCSV()">📥 Export CSV</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="dataTable"></table>
+                </div>
+            </div>
+
+            <!-- AI Insights -->
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span>💡</span>
+                    AI-Generated Insights
+                </h2>
+            </div>
+            <div class="insights-panel" id="insightsPanel"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = [];
+        let currentMode = 'technical';
+        let categoryChart = null;
+        let trendChart = null;
+        let allData = [];
+        let filteredData = [];
+
+        // Advanced options toggle
+        document.getElementById('advancedToggle').addEventListener('click', () => {
+            document.getElementById('advancedOptions').classList.toggle('show');
+        });
+
+        // Input method selection
+        document.getElementById('manualInputBtn').addEventListener('click', () => {
+            setActiveInput('manual');
+        });
+
+        document.getElementById('fileUploadBtn').addEventListener('click', () => {
+            setActiveInput('file');
+        });
+
+        document.getElementById('sampleDataBtn').addEventListener('click', () => {
+            loadSampleData();
+        });
+
+        function setActiveInput(type) {
+            document.querySelectorAll('.input-method').forEach(el => el.classList.remove('active'));
+            document.getElementById('manualInputArea').classList.remove('active');
+            document.getElementById('fileUploadArea').classList.remove('active');
+
+            if (type === 'manual') {
+                document.getElementById('manualInputBtn').classList.add('active');
+                document.getElementById('manualInputArea').classList.add('active');
+            } else if (type === 'file') {
+                document.getElementById('fileUploadBtn').classList.add('active');
+                document.getElementById('fileUploadArea').classList.add('active');
+            }
+        }
+
+        // Add row functionality
+        document.getElementById('addRowBtn').addEventListener('click', () => {
+            const grid = document.getElementById('inputGrid');
+            const newRow = document.createElement('div');
+            newRow.className = 'input-row';
+            newRow.innerHTML = `
+                <input type="text" class="input-field" placeholder="Product Name" data-field="product">
+                <input type="text" class="input-field" placeholder="Category" data-field="category">
+                <input type="number" class="input-field" placeholder="Sales" data-field="sales">
+                <input type="number" class="input-field" placeholder="Revenue" data-field="revenue">
+                <button class="remove-btn" onclick="removeRow(this)">🗑️</button>
+            `;
+            grid.appendChild(newRow);
+            updateGenerateButton();
+        });
+
+        function removeRow(btn) {
+            btn.closest('.input-row').remove();
+            updateGenerateButton();
+        }
+
+        // File upload with proper parsing
+        const fileDropZone = document.getElementById('fileDropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        fileDropZone.addEventListener('click', () => fileInput.click());
+
+        fileDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.add('dragover');
+        });
+
+        fileDropZone.addEventListener('dragleave', () => {
+            fileDropZone.classList.remove('dragover');
+        });
+
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            
+            if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        currentData = XLSX.utils.sheet_to_json(firstSheet);
+                        
+                        showFileInfo(file);
+                        showDataPreview(currentData);
+                    } catch (error) {
+                        alert('Error parsing Excel file: ' + error.message);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                reader.onload = (e) => {
+                    try {
+                        const content = e.target.result;
+                        if (file.name.endsWith('.json')) {
+                            currentData = JSON.parse(content);
+                        } else if (file.name.endsWith('.csv')) {
+                            Papa.parse(content, {
+                                header: true,
+                                dynamicTyping: true,
+                                complete: (results) => {
+                                    currentData = results.data.filter(row => Object.values(row).some(val => val !== null && val !== ''));
+                                    showFileInfo(file);
+                                    showDataPreview(currentData);
+                                }
+                            });
+                            return;
+                        }
+                        
+                        showFileInfo(file);
+                        showDataPreview(currentData);
+                    } catch (error) {
+                        alert('Error parsing file: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function showFileInfo(file) {
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('fileInfo').classList.add('show');
+            updateGenerateButton();
+        }
+
+        function showDataPreview(data) {
+            const preview = data.slice(0, 5);
+            const headers = Object.keys(preview[0]);
+            const previewTable = document.getElementById('previewTable');
+            
+            let html = '<thead><tr>';
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            preview.forEach(row => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${row[header]}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody>';
+            
+            previewTable.innerHTML = html;
+            document.getElementById('totalRows').textContent = data.length;
+            document.getElementById('dataPreview').classList.add('show');
+        }
+
+        function clearFile() {
+            currentData = [];
+            document.getElementById('fileInfo').classList.remove('show');
+            document.getElementById('dataPreview').classList.remove('show');
+            fileInput.value = '';
+            updateGenerateButton();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' bytes';
+            else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            else return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        // Sample data
+        function loadSampleData() {
+            currentData = [
+                { product: 'Laptop Pro', category: 'Electronics', sales: 1250, revenue: 1875000, growth: 23.5, region: 'North America' },
+                { product: 'Wireless Mouse', category: 'Accessories', sales: 3420, revenue: 136800, growth: 15.2, region: 'Europe' },
+                { product: 'Monitor 4K', category: 'Electronics', sales: 890, revenue: 534000, growth: -5.3, region: 'Asia' },
+                { product: 'Keyboard Mechanical', category: 'Accessories', sales: 2100, revenue: 315000, growth: 31.7, region: 'North America' },
+                { product: 'Webcam HD', category: 'Electronics', sales: 1680, revenue: 252000, growth: 42.1, region: 'Europe' },
+                { product: 'USB-C Hub', category: 'Accessories', sales: 2890, revenue: 173400, growth: 18.9, region: 'Asia' },
+                { product: 'Laptop Stand', category: 'Accessories', sales: 1560, revenue: 93600, growth: 8.4, region: 'North America' },
+                { product: 'Tablet Air', category: 'Electronics', sales: 670, revenue: 536000, growth: -12.6, region: 'Europe' },
+                { product: 'Phone Case Pro', category: 'Accessories', sales: 5200, revenue: 104000, growth: 28.3, region: 'Asia' },
+                { product: 'Smartwatch', category: 'Electronics', sales: 980, revenue: 294000, growth: 12.7, region: 'North America' }
+            ];
+            
+            document.querySelectorAll('.input-method').forEach(el => el.classList.remove('active'));
+            document.getElementById('sampleDataBtn').classList.add('active');
+            showDataPreview(currentData);
+            updateGenerateButton();
+        }
+
+        // Manual input collection
+        function collectManualData() {
+            const rows = document.querySelectorAll('#inputGrid .input-row');
+            const data = [];
+            
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('.input-field');
+                const rowData = {};
+                let hasData = false;
+                
+                inputs.forEach(input => {
+                    const value = input.value.trim();
+                    if (value) {
+                        hasData = true;
+                        rowData[input.dataset.field] = input.type === 'number' ? parseFloat(value) : value;
+                    }
+                });
+                
+                if (hasData) data.push(rowData);
+            });
+            
+            return data;
+        }
+
+        function updateGenerateButton() {
+            const manualData = collectManualData();
+            const hasData = currentData.length > 0 || manualData.length > 0;
+            document.getElementById('generateBtn').disabled = !hasData;
+        }
+
+        // Mode toggle
+        document.getElementById('businessMode').addEventListener('click', () => {
+            currentMode = 'business';
+            document.getElementById('businessMode').classList.add('active');
+            document.getElementById('technicalMode').classList.remove('active');
+            if (currentData.length > 0) {
+                displayResults();
+            }
+        });
+
+        document.getElementById('technicalMode').addEventListener('click', () => {
+            currentMode = 'technical';
+            document.getElementById('technicalMode').classList.add('active');
+            document.getElementById('businessMode').classList.remove('active');
+            if (currentData.length > 0) {
+                displayResults();
+            }
+        });
+
+        // Generate insights
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            if (currentData.length === 0) {
+                currentData = collectManualData();
+            }
+
+            if (currentData.length === 0) {
+                alert('Please input some data first');
+                return;
+            }
+
+            allData = [...currentData];
+            filteredData = [...currentData];
+
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('resultsSection').classList.remove('show');
+
+            try {
+                await generateInsights();
+                displayResults();
+                
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('resultsSection').classList.add('show');
+                document.getElementById('exportBtn').classList.add('show');
+                
+                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                document.getElementById('loading').classList.remove('show');
+                alert('Error generating insights: ' + error.message);
+            }
+        });
+
+        async function generateInsights() {
+            const dataSummary = JSON.stringify(currentData.slice(0, 10), null, 2);
+            
+            const prompt = currentMode === 'technical' 
+                ? `Analyze this data as a data scientist. Provide technical insights in JSON format.
+
+Data: ${dataSummary}
+
+Return ONLY valid JSON (no markdown, no preamble), structured as:
+{
+  "insights": [
+    {"title": "string", "text": "detailed technical analysis with metrics", "icon": "emoji"}
+  ]
+}
+
+Focus on: statistical significance, correlations, distributions, outliers, data quality issues.`
+                : `Analyze this data as a business consultant. Provide business insights in JSON format.
+
+Data: ${dataSummary}
+
+Return ONLY valid JSON (no markdown, no preamble), structured as:
+{
+  "insights": [
+    {"title": "string", "text": "clear business insight with actions", "icon": "emoji"}
+  ]
+}
+
+Focus on: business opportunities, trends, actionable recommendations, ROI.`;
+
+            const response = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "claude-sonnet-4-20250514",
+                    max_tokens: 1500,
+                    messages: [
+                        { role: "user", content: prompt }
+                    ],
+                })
+            });
+
+            const data = await response.json();
+            const text = data.content.find(item => item.type === "text")?.text || '{"insights":[]}';
+            
+            const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            const parsed = JSON.parse(cleanText);
+            currentData.insights = parsed.insights;
+        }
+
+        function displayResults() {
+            displayMetrics();
+            displayCharts();
+            displayTable();
+            displayInsights();
+            updateModeBadge();
+            
+            if (currentMode === 'technical') {
+                displayStatistics();
+                displaySQL();
+                document.getElementById('statsPanel').style.display = 'block';
+                document.getElementById('sqlSection').style.display = 'block';
+            } else {
+                document.getElementById('statsPanel').style.display = 'none';
+                document.getElementById('sqlSection').style.display = 'none';
+            }
+        }
+
+        function displayMetrics() {
+            const metrics = calculateMetrics();
+            const metricsGrid = document.getElementById('metricsGrid');
+            
+            metricsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">📊 Total Revenue</div>
+                    <div class="stat-value">$${(metrics.totalRevenue / 1000).toFixed(1)}K</div>
+                    <div class="stat-change positive">↑ ${metrics.avgGrowth.toFixed(1)}% avg growth</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">📦 Total Sales</div>
+                    <div class="stat-value">${metrics.totalSales.toLocaleString()}</div>
+                    <div class="stat-change positive">↑ Top: ${metrics.topProduct}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">🎯 Average Order Value</div>
+                    <div class="stat-value">$${metrics.avgOrderValue.toFixed(0)}</div>
+                    <div class="stat-change ${metrics.revenueGrowth >= 0 ? 'positive' : 'negative'}">
+                        ${metrics.revenueGrowth >= 0 ? '↑' : '↓'} ${Math.abs(metrics.revenueGrowth).toFixed(1)}%
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">📈 Products Analyzed</div>
+                    <div class="stat-value">${metrics.productCount}</div>
+                    <div class="stat-change positive">↑ ${metrics.categories} categories</div>
+                </div>
+            `;
+        }
+
+        function calculateMetrics() {
+            const totalRevenue = currentData.reduce((sum, item) => sum + (item.revenue || 0), 0);
+            const totalSales = currentData.reduce((sum, item) => sum + (item.sales || 0), 0);
+            const avgOrderValue = totalRevenue / totalSales;
+            const avgGrowth = currentData.reduce((sum, item) => sum + (item.growth || 0), 0) / currentData.length;
+            const topProduct = currentData.reduce((max, item) => item.sales > max.sales ? item : max, currentData[0]).product;
+            const categories = new Set(currentData.map(item => item.category)).size;
+            
+            return {
+                totalRevenue,
+                totalSales,
+                avgOrderValue,
+                avgGrowth,
+                topProduct,
+                productCount: currentData.length,
+                categories,
+                revenueGrowth: avgGrowth
+            };
+        }
+
+        function displayStatistics() {
+            const statsGrid = document.getElementById('statsGrid');
+            const revenueValues = currentData.map(item => item.revenue || 0);
+            const salesValues = currentData.map(item => item.sales || 0);
+            
+            const stats = {
+                'Mean Revenue': calculateMean(revenueValues).toFixed(2),
+                'Median Revenue': calculateMedian(revenueValues).toFixed(2),
+                'Std Dev Revenue': calculateStdDev(revenueValues).toFixed(2),
+                'Mean Sales': calculateMean(salesValues).toFixed(0),
+                'Median Sales': calculateMedian(salesValues).toFixed(0),
+                'Std Dev Sales': calculateStdDev(salesValues).toFixed(0),
+                'Sample Size': currentData.length,
+                'Missing Values': countMissingValues()
+            };
+            
+            statsGrid.innerHTML = Object.entries(stats).map(([name, value]) => `
+                <div class="stat-item">
+                    <span class="stat-name">${name}</span>
+                    <span class="stat-number">${value}</span>
+                </div>
+            `).join('');
+        }
+
+        function calculateMean(arr) {
+            return arr.reduce((a, b) => a + b, 0) / arr.length;
+        }
+
+        function calculateMedian(arr) {
+            const sorted = [...arr].sort((a, b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+        }
+
+        function calculateStdDev(arr) {
+            const mean = calculateMean(arr);
+            const squareDiffs = arr.map(value => Math.pow(value - mean, 2));
+            const avgSquareDiff = calculateMean(squareDiffs);
+            return Math.sqrt(avgSquareDiff);
+        }
+
+        function countMissingValues() {
+            let missing = 0;
+            currentData.forEach(row => {
+                Object.values(row).forEach(val => {
+                    if (val === null || val === undefined || val === '') missing++;
+                });
+            });
+            return missing;
+        }
+
+        function displaySQL() {
+            const tableName = 'sales_data';
+            const columns = Object.keys(currentData[0]).join(', ');
+            
+            const sql = `-- Sample SQL queries for your dataset
+
+-- Select all data
+SELECT ${columns}
+FROM ${tableName};
+
+-- Top performing products by revenue
+SELECT product, category, revenue, sales
+FROM ${tableName}
+ORDER BY revenue DESC
+LIMIT 10;
+
+-- Category-wise revenue analysis
+SELECT 
+    category,
+    COUNT(*) as product_count,
+    SUM(revenue) as total_revenue,
+    AVG(growth) as avg_growth_rate
+FROM ${tableName}
+GROUP BY category
+ORDER BY total_revenue DESC;
+
+-- Products with negative growth
+SELECT product, category, growth, revenue
+FROM ${tableName}
+WHERE growth < 0
+ORDER BY growth ASC;`;
+
+            document.getElementById('sqlQuery').textContent = sql;
+        }
+
+        function displayCharts() {
+            // Category chart
+            const categoryData = {};
+            currentData.forEach(item => {
+                if (!categoryData[item.category]) {
+                    categoryData[item.category] = 0;
+                }
+                categoryData[item.category] += item.revenue || 0;
+            });
+
+            const ctx1 = document.getElementById('categoryChart');
+            if (categoryChart) categoryChart.destroy();
+            
+            categoryChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categoryData),
+                    datasets: [{
+                        data: Object.values(categoryData),
+                        backgroundColor: [
+                            'rgba(0, 217, 255, 0.8)',
+                            'rgba(0, 255, 136, 0.8)',
+                            'rgba(255, 170, 0, 0.8)',
+                            'rgba(255, 71, 87, 0.8)'
+                        ],
+                        borderColor: '#0f1629',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    family: 'Sora',
+                                    size: 12
+                                },
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Trend chart
+            const ctx2 = document.getElementById('trendChart');
+            if (trendChart) trendChart.destroy();
+            
+            trendChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: currentData.map(item => item.product),
+                    datasets: [{
+                        label: 'Growth %',
+                        data: currentData.map(item => item.growth || 0),
+                        backgroundColor: currentData.map(item => 
+                            (item.growth || 0) >= 0 ? 'rgba(0, 255, 136, 0.8)' : 'rgba(255, 71, 87, 0.8)'
+                        ),
+                        borderColor: '#0f1629',
+                        borderWidth: 0,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(30, 41, 59, 0.5)'
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: {
+                                    family: 'JetBrains Mono'
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: {
+                                    family: 'Sora',
+                                    size: 10
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Table search
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            filteredData = allData.filter(row => {
+                return Object.values(row).some(val => 
+                    String(val).toLowerCase().includes(searchTerm)
+                );
+            });
+            displayTable();
+        });
+
+        function displayTable() {
+            const table = document.getElementById('dataTable');
+            const data = filteredData.length > 0 ? filteredData : allData;
+            const headers = Object.keys(data[0]);
+            
+            let html = '<thead><tr>';
+            headers.forEach(header => {
+                html += `<th onclick="sortTable('${header}')">${header.charAt(0).toUpperCase() + header.slice(1)} ⇅</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            data.forEach(row => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    const value = row[header];
+                    const isNumber = typeof value === 'number';
+                    const className = isNumber ? 'number-cell' : '';
+                    const valueClass = header === 'growth' && isNumber 
+                        ? (value >= 0 ? 'positive-value' : 'negative-value')
+                        : '';
+                    
+                    const displayValue = isNumber 
+                        ? (header === 'growth' ? value.toFixed(1) + '%' : value.toLocaleString())
+                        : value;
+                    
+                    html += `<td class="${className} ${valueClass}">${displayValue}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        let sortDirection = {};
+        function sortTable(column) {
+            sortDirection[column] = !sortDirection[column];
+            const direction = sortDirection[column] ? 1 : -1;
+            
+            filteredData.sort((a, b) => {
+                if (a[column] < b[column]) return -direction;
+                if (a[column] > b[column]) return direction;
+                return 0;
+            });
+            
+            displayTable();
+        }
+
+        function displayInsights() {
+            const panel = document.getElementById('insightsPanel');
+            const insights = currentData.insights || [];
+            
+            panel.innerHTML = insights.map(insight => `
+                <div class="insight-item">
+                    <div class="insight-title">
+                        <span class="insight-icon">${insight.icon}</span>
+                        ${insight.title}
+                    </div>
+                    <div class="insight-text">${insight.text}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateModeBadge() {
+            const badge = document.getElementById('currentModeBadge');
+            if (currentMode === 'technical') {
+                badge.className = 'mode-badge technical';
+                badge.textContent = 'Technical View';
+            } else {
+                badge.className = 'mode-badge business';
+                badge.textContent = 'Business View';
+            }
+        }
+
+        // Export functions
+        function downloadChart(chartId) {
+            const canvas = document.getElementById(chartId);
+            const url = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `${chartId}_${Date.now()}.png`;
+            link.href = url;
+            link.click();
+        }
+
+        function exportToCSV() {
+            const csv = Papa.unparse(allData);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = `insightflow_export_${Date.now()}.csv`;
+            link.href = url;
+            link.click();
+        }
+
+        function copySQL() {
+            const sql = document.getElementById('sqlQuery').textContent;
+            navigator.clipboard.writeText(sql).then(() => {
+                alert('SQL copied to clipboard!');
+            });
+        }
+
+        // Export full report
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const report = {
+                metadata: {
+                    generated: new Date().toISOString(),
+                    mode: currentMode,
+                    recordCount: allData.length
+                },
+                metrics: calculateMetrics(),
+                data: allData,
+                insights: currentData.insights
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = `insightflow_report_${Date.now()}.json`;
+            link.href = url;
+            link.click();
+        });
+
+        // Monitor manual input
+        document.addEventListener('input', (e) => {
+            if (e.target.classList.contains('input-field')) {
+                updateGenerateButton();
+            }
+        });
+    </script>
+</body>
+</html>
